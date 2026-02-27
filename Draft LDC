@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCL Draft 11 - Huitièmes LDC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #091442, #0E1E5B, #6A1B9A); 
+            color: white; 
+            min-height: 100vh; 
+        }
+        .container { max-width: 1200px; }
+        h1, h3 { color: #AB47BC; }
+        .card { 
+            background: rgba(255,255,255,0.08); 
+            border: 1px solid #AB47BC; 
+            border-radius: 12px; 
+        }
+        .player-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #6594C0; }
+        #budget { font-size: 2rem; color: #AB47BC; }
+        #total-value { color: #F61225; font-weight: bold; }
+        .valid { color: #4caf50; font-weight: bold; }
+        .squad-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; display: inline-block; }
+        .pitch {
+            background: #006400 url('https://i.imgur.com/5NK0U1q.png') center/cover;
+            height: 650px; width: 450px; margin: 30px auto;
+            position: relative; border: 4px solid #AB47BC; border-radius: 15px;
+            box-shadow: 0 0 40px rgba(171,71,188,0.6);
+        }
+        .pos {
+            position: absolute; background: rgba(255,255,255,0.9); color: black;
+            padding: 8px 12px; border-radius: 8px; font-size: 1rem; cursor: pointer;
+            text-align: center; min-width: 70px; font-weight: bold;
+        }
+        .pos:hover { background: #AB47BC; color: white; transform: scale(1.1); }
+        .pos img { width: 32px; height: 32px; border-radius: 50%; vertical-align: middle; margin-right: 6px; }
+        #gk { top: 580px; left: 190px; }
+        #lb { top: 430px; left: 50px; }
+        #cb1 { top: 430px; left: 150px; }
+        #cb2 { top: 430px; left: 250px; }
+        #rb { top: 430px; left: 350px; }
+        #dm { top: 320px; left: 190px; }
+        #cm1 { top: 210px; left: 100px; }
+        #cm2 { top: 210px; left: 280px; }
+        #lw { top: 80px; left: 50px; }
+        #st { top: 80px; left: 190px; }
+        #rw { top: 80px; left: 350px; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">UCL Draft 11 - Huitièmes 2025/26</h1>
+        
+        <div class="text-center mb-4">
+            <button id="generate-budget" class="btn btn-primary btn-lg">Générer Budget</button>
+        </div>
+        <p id="budget" class="text-center fs-3">Budget : —</p>
+
+        <input type="text" id="search" class="form-control mb-4 bg-dark text-white" placeholder="Rechercher...">
+
+        <div class="row">
+            <div class="col-lg-8">
+                <h3>Joueurs Disponibles</h3>
+                <div id="players-list" class="row g-3"></div>
+            </div>
+            <div class="col-lg-4">
+                <h3>Ton 11</h3>
+                <ul id="squad" class="list-group mb-3"></ul>
+                <p>Total : <span id="total-value">0 €</span></p>
+                <p>Comp : <span id="composition">GK:0 DEF:0 MID:0 FWD:0</span></p>
+                <p id="status" class="fs-4 fw-bold text-center"></p>
+                <button id="view-formation" class="btn btn-primary w-100 d-none">Formation 4-3-3</button>
+            </div>
+        </div>
+
+        <div id="formation-section" class="d-none text-center mt-5">
+            <h3>Terrain 4-3-3</h3>
+            <div class="pitch">
+                <div class="pos" id="gk">GK</div>
+                <div class="pos" id="lb">LB</div>
+                <div class="pos" id="cb1">CB</div>
+                <div class="pos" id="cb2">CB</div>
+                <div class="pos" id="rb">RB</div>
+                <div class="pos" id="dm">DM</div>
+                <div class="pos" id="cm1">CM</div>
+                <div class="pos" id="cm2">CM</div>
+                <div class="pos" id="lw">LW</div>
+                <div class="pos" id="st">ST</div>
+                <div class="pos" id="rw">RW</div>
+            </div>
+            <button id="back-to-draft" class="btn btn-secondary mt-4">Retour Draft</button>
+        </div>
+    </div>
+
+    <script>
+        const players = [
+            {name: "Kylian Mbappé", position: "ST", value: 200000000, team: "Real Madrid", imageId: 342229},
+            {name: "Erling Haaland", position: "ST", value: 200000000, team: "Manchester City", imageId: 418560},
+            {name: "Vinicius Junior", position: "LW", value: 150000000, team: "Real Madrid", imageId: 371998},
+            {name: "Bradley Barcola", position: "LW", value: 70000000, team: "Paris Saint-Germain", imageId: 708265},
+            {name: "Nuno Mendes", position: "LB", value: 75000000, team: "Paris Saint-Germain", imageId: 616341},
+            {name: "Achraf Hakimi", position: "RB", value: 80000000, team: "Paris Saint-Germain", imageId: 398073},
+            {name: "Jude Bellingham", position: "CM", value: 160000000, team: "Real Madrid", imageId: 581678},
+            {name: "Bukayo Saka", position: "RW", value: 130000000, team: "Arsenal", imageId: 433177},
+            {name: "William Saliba", position: "CB", value: 90000000, team: "Arsenal", imageId: 495666},
+            {name: "Gabriel Magalhães", position: "CB", value: 75000000, team: "Arsenal", imageId: 435338},
+            {name: "Declan Rice", position: "DM", value: 120000000, team: "Arsenal", imageId: 357662},
+            {name: "Martin Ødegaard", position: "CM", value: 75000000, team: "Arsenal", imageId: 316264},
+            {name: "Gabriel Martinelli", position: "LW", value: 45000000, team: "Arsenal", imageId: 655488},
+            {name: "Kai Havertz", position: "ST", value: 55000000, team: "Arsenal", imageId: 309400},
+            {name: "David Raya", position: "GK", value: 35000000, team: "Arsenal", imageId: 262749}
+        ];
+
+        let budget = 0;
+        let squad = [];
+        let formation = {};
+
+        const posMap = {
+            gk: {label: 'GK', req: 'GK'},
+            lb: {label: 'LB', req: 'LB'},
+            cb1: {label: 'CB', req: 'CB'},
+            cb2: {label: 'CB', req: 'CB'},
+            rb: {label: 'RB', req: 'RB'},
+            dm: {label: 'DM', req: 'DM'},
+            cm1: {label: 'CM', req: 'CM'},
+            cm2: {label: 'CM', req: 'CM'},
+            lw: {label: 'LW', req: 'LW'},
+            st: {label: 'ST', req: 'ST'},
+            rw: {label: 'RW', req: 'RW'}
+        };
+
+        function formatValue(v) {
+            if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B€';
+            if (v >= 1e6) return Math.round(v / 1e6) + 'M€';
+            return v.toLocaleString() + '€';
+        }
+
+        function getImageUrl(id) {
+            return id ? `https://img.a.transfermarkt.technology/portrait/medium/${id}.jpg?lm=1` : 'https://via.placeholder.com/50?text=?';
+        }
+
+        function renderPlayers(filter = '') {
+            const list = document.getElementById('players-list');
+            list.innerHTML = '';
+            const term = filter.toLowerCase().trim();
+
+            players.forEach((p, idx) => {
+                if (squad.some(s => s.idx === idx)) return;
+                if (term && !p.name.toLowerCase().includes(term) && !p.team.toLowerCase().includes(term) && !p.position.toLowerCase().includes(term)) return;
+
+                const card = document.createElement('div');
+                card.className = 'col-12 col-md-6 col-lg-4 mb-3';
+                card.innerHTML = `
+                    <div class="card text-white">
+                        <div class="card-body d-flex align-items-center">
+                            <img src="${getImageUrl(p.imageId)}" class="player-img" alt="${p.name}">
+                            <div class="ms-3 flex-grow-1">
+                                <h6 class="mb-1">${p.name}</h6>
+                                <small>${p.position} • ${p.team} • ${formatValue(p.value)}</small>
+                            </div>
+                            <button class="btn btn-sm btn-success ms-2 add-btn" data-idx="${idx}">+</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            document.querySelectorAll('.add-btn').forEach(btn => btn.onclick = () => addPlayer(parseInt(btn.dataset.idx)));
+        }
+
+        function addPlayer(idx) {
+            if (squad.some(s => s.idx === idx)) return;
+            squad.push({idx, p: players[idx]});
+            updateSquad();
+            renderPlayers(document.getElementById('search').value);
+        }
+
+        function removePlayer(i) {
+            squad.splice(i, 1);
+            updateSquad();
+            renderPlayers(document.getElementById('search').value);
+        }
+
+        function updateSquad() {
+            const ul = document.getElementById('squad');
+            ul.innerHTML = '';
+            let total = 0;
+            const counts = {GK:0, DEF:0, MID:0, FWD:0};
+
+            squad.forEach(({p}, i) => {
+                total += p.value;
+                if (p.position === 'GK') counts.GK++;
+                else if (['LB','CB','RB'].includes(p.position)) counts.DEF++;
+                else if (['DM','CM'].includes(p.position)) counts.MID++;
+                else counts.FWD++;
+
+                const li = document.createElement('li');
+                li.className = 'list-group-item bg-dark border-secondary d-flex align-items-center justify-content-between';
+                li.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${getImageUrl(p.imageId)}" class="player-img me-2" alt="${p.name}">
+                        <div>
+                            <div class="squad-name fw-bold">${p.name}</div>
+                            <small>${p.position} - ${p.team}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="me-3">${formatValue(p.value)}</span>
+                        <button class="btn btn-sm btn-danger" onclick="removePlayer(${i})">×</button>
+                    </div>
+                `;
+                ul.appendChild(li);
+            });
+
+            document.getElementById('total-value').textContent = formatValue(total);
+            document.getElementById('composition').textContent = `GK:${counts.GK} DEF:${counts.DEF} MID:${counts.MID} FWD:${counts.FWD}`;
+
+            const status = document.getElementById('status');
+            const formBtn = document.getElementById('view-formation');
+            if (squad.length === 11 && counts.GK === 1 && counts.DEF === 4 && counts.MID === 3 && counts.FWD === 3) {
+                status.textContent = 'Équipe complète ! Clique pour placer les joueurs sur le terrain';
+                status.className = 'valid';
+                formBtn.classList.remove('d-none');
+            } else {
+                status.textContent = '';
+                formBtn.classList.add('d-none');
+            }
+        }
+
+        function showFormation() {
+            document.querySelector('.container').classList.add('d-none');
+            document.getElementById('formation-section').classList.remove('d-none');
+
+            Object.keys(posMap).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) {
+                    el.onclick = () => assignPosition(key);
+                    updatePos(key);
+                }
+            });
+        }
+
+        function updatePos(key) {
+            const el = document.getElementById(key);
+            const name = formation[key];
+            if (name) {
+                const player = squad.find(s => s.p.name === name);
+                el.innerHTML = `<img src="${getImageUrl(player.p.imageId)}">${name.split(' ').pop()}`;
+            } else {
+                el.textContent = posMap[key].label;
+            }
+        }
+
+        function assignPosition(key) {
+            const req = posMap[key].req;
+            const compatible = squad.filter(s => s.p.position === req && !Object.values(formation).includes(s.p.name));
+            if (compatible.length === 0) {
+                alert(`Aucun joueur disponible pour ${posMap[key].label} (${req})`);
+                return;
+            }
+
+            const choice = prompt(`Joueurs disponibles pour ${posMap[key].label}:\n` + 
+                compatible.map((s, i) => `${i+1}. ${s.p.name}`).join('\n') + 
+                '\n\nTape le numéro :');
+
+            const num = parseInt(choice);
+            if (!isNaN(num) && num > 0 && num <= compatible.length) {
+                formation[key] = compatible[num-1].p.name;
+                updatePos(key);
+            }
+        }
+
+        document.getElementById('generate-budget').onclick = () => {
+            budget = Math.floor(Math.random() * 900000000) + 100000000;
+            document.getElementById('budget').textContent = `Budget : ${formatValue(budget)}`;
+        };
+
+        document.getElementById('search').oninput = e => renderPlayers(e.target.value);
+
+        document.getElementById('view-formation').onclick = showFormation;
+
+        document.getElementById('back-to-draft').onclick = () => {
+            document.querySelector('.container').classList.remove('d-none');
+            document.getElementById('formation-section').classList.add('d-none');
+        };
+
+        renderPlayers();
+    </script>
+</body>
+</html>
